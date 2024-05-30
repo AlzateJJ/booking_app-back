@@ -1,6 +1,7 @@
 const catchError = require('../utils/catchError');
 const User = require('../models/User');
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken');
 
 const getAll = catchError(async(req, res) => {
     const results = await User.findAll();
@@ -46,10 +47,26 @@ const update = catchError(async(req, res) => {
     return res.json(result[1][0]);
 });
 
+const login = catchError(async(req, res) => {
+    const { email, password } = req.body
+    const userCreated = await User.findOne({where: { email: email }})
+    if (!userCreated) return res.status(401).json({message: "usuario no encontrado :/"})
+    const isValid = await bcrypt.compare(password, userCreated.password)
+    if (!isValid) return res.status(401).json({message: "contraseña incorrecta :("})
+
+    const accessToken = jwt.sign(
+		{ userCreated }, // payload
+		process.env.TOKEN_SECRET, // clave secreta
+		{ expiresIn: '1d' } // OPCIONAL: Tiempo en el que expira el token
+    )
+    return res.json({user: userCreated, token: accessToken}).status(202)
+})
+
 module.exports = {
     getAll,
     create,
     getOne,
     remove,
-    update
+    update,
+    login
 }
