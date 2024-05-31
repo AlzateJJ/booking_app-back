@@ -8,10 +8,10 @@ let token
 
 test('POST /users debe crear un usuario', async () => {
     const newUser = {
-        firstName: "testUser",
-        lastName: "testUser",
-        email: "testUser@gmail.com",
-        password: "testUser",
+        firstName: "testUser2",
+        lastName: "testUser2",
+        email: "testUser2@gmail.com",
+        password: "testUser2",
         gender: "other"
     }
     const result = await request(app).post('/users').send(newUser)

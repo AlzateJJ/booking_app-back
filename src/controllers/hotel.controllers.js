@@ -1,33 +1,43 @@
 const catchError = require('../utils/catchError');
-const City = require('../models/City');
 const Hotel = require('../models/Hotel');
+const City = require('../models/City');
+const { Op } = require('sequelize');
+const Image = require('../models/Image');
 
 const getAll = catchError(async(req, res) => {
-    const results = await City.findAll({ include: [Hotel] });
+    const { cityId, name } = req.query
+    const whereQuerys = {}
+    if (Number.isInteger(+cityId)) whereQuerys.cityId = cityId
+    if (name) whereQuerys.name = { [Op.iLike]: `%${name}%` }
+    console.log(whereQuerys)
+    const results = await Hotel.findAll({
+        include: [City, Image],
+        where: whereQuerys
+    });
     return res.json(results);
 });
 
 const create = catchError(async(req, res) => {
-    const result = await City.create(req.body);
+    const result = await Hotel.create(req.body);
     return res.status(201).json(result);
 });
 
 const getOne = catchError(async(req, res) => {
     const { id } = req.params;
-    const result = await City.findByPk(id);
+    const result = await Hotel.findByPk(id, { include: [City, Image] });
     if(!result) return res.sendStatus(404);
     return res.json(result);
 });
 
 const remove = catchError(async(req, res) => {
     const { id } = req.params;
-    await City.destroy({ where: {id} });
+    await Hotel.destroy({ where: {id} });
     return res.sendStatus(204);
 });
 
 const update = catchError(async(req, res) => {
     const { id } = req.params;
-    const result = await City.update(
+    const result = await Hotel.update(
         req.body,
         { where: {id}, returning: true }
     );
