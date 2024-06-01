@@ -3,18 +3,37 @@ const Hotel = require('../models/Hotel');
 const City = require('../models/City');
 const { Op } = require('sequelize');
 const Image = require('../models/Image');
+const Review = require('../models/Review');
 
 const getAll = catchError(async(req, res) => {
     const { cityId, name } = req.query
     const whereQuerys = {}
     if (Number.isInteger(+cityId)) whereQuerys.cityId = cityId
     if (name) whereQuerys.name = { [Op.iLike]: `%${name}%` }
-    // console.log(whereQuerys)
     const results = await Hotel.findAll({
-        include: [City, Image],
-        where: whereQuerys
+        include: [Image, City],
+        where: whereQuerys,
+        raw: true, // findAll devuelve instancias de sequelize, lo cual contiene info adicional a la de los hoteles, pero yo solo quiero la info de los hoteles, por lo que añado el raw
+        nest: true // para que (por el raw) no salga todo plano
     });
-    return res.json(results);
+
+    const hotelsWithAvgPromises = results.map(async hotel => {
+        const reviews = await Review.findAll({ where: { hotelId: hotel.id }, raw: true })
+        let sumRatings = 0
+        reviews.forEach(review => {
+            sumRatings += Number(review.rating)
+        })
+        return {
+            ...hotel,
+            average: +(sumRatings / reviews.length).toFixed(1),
+            // reviews
+        }
+    })
+    const hotelsWithAvg = await Promise.all(hotelsWithAvgPromises) // hotelsWithAvgPromises me
+    // devuelve un arreglo de promesas (por el async), para que me las resuelva todas, debo
+    // definir otro arreglo que me las resuelva todas, y esto lo hago con el Promise.all 
+
+    return res.json(hotelsWithAvg);
 });
 
 const create = catchError(async(req, res) => {
