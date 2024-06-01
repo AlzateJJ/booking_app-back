@@ -1,44 +1,49 @@
 const catchError = require('../utils/catchError');
-const Hotel = require('../models/Hotel');
-const City = require('../models/City');
-const { Op } = require('sequelize');
-const Image = require('../models/Image');
+const Booking = require('../models/Booking');
+const User = require('../models/User');
 
 const getAll = catchError(async(req, res) => {
-    const { cityId, name } = req.query
-    const whereQuerys = {}
-    if (Number.isInteger(+cityId)) whereQuerys.cityId = cityId
-    if (name) whereQuerys.name = { [Op.iLike]: `%${name}%` }
-    // console.log(whereQuerys)
-    const results = await Hotel.findAll({
-        include: [City, Image],
-        where: whereQuerys
+    console.log(req.user)
+    const { userId, hotelId } = req.query
+    const whereQuery = {}
+    if (userId) whereQuery.userId = userId
+    if (hotelId) whereQuery.hotelId = hotelId
+    const results = await Booking.findAll({
+         include: [User],
+         where: whereQuery
     });
     return res.json(results);
 });
 
 const create = catchError(async(req, res) => {
-    const result = await Hotel.create(req.body);
+    const { hotelId, checkIn, checkOut } = req.body
+    const result = await Booking.create({
+        checkIn,
+        checkOut,
+        hotelId,
+        userId: req.user.id
+    });
     return res.status(201).json(result);
 });
 
 const getOne = catchError(async(req, res) => {
     const { id } = req.params;
-    const result = await Hotel.findByPk(id, { include: [City, Image] });
+    const result = await Booking.findByPk(id);
     if(!result) return res.sendStatus(404);
     return res.json(result);
 });
 
 const remove = catchError(async(req, res) => {
     const { id } = req.params;
-    await Hotel.destroy({ where: {id} });
+    await Booking.destroy({ where: {id} });
     return res.sendStatus(204);
 });
 
 const update = catchError(async(req, res) => {
     const { id } = req.params;
-    const result = await Hotel.update(
-        req.body,
+    const { checkIn, checkOut } = req.body
+    const result = await Booking.update(
+        { checkIn, checkOut },
         { where: {id}, returning: true }
     );
     if(result[0] === 0) return res.sendStatus(404);

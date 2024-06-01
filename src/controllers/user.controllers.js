@@ -55,7 +55,7 @@ const login = catchError(async(req, res) => {
     if (!isValid) return res.status(401).json({message: "contraseña incorrecta :("})
 
     const accessToken = jwt.sign(
-		{ userCreated }, // payload
+		{ user: userCreated }, // payload
 		process.env.TOKEN_SECRET, // clave secreta
 		{ expiresIn: '1d' } // OPCIONAL: Tiempo en el que expira el token
     )

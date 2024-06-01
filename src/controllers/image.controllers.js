@@ -1,6 +1,6 @@
 const catchError = require('../utils/catchError');
 const Image = require('../models/Image');
-const { uploadToCloudinary } = require('../utils/cloudinary');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
 
 const getAll = catchError(async(req, res) => {
     const result = await Image.findAll()
@@ -18,7 +18,17 @@ const create = catchError( async (req, res) => {
     return res.status(201).json(image)
 })
 
+const remove = catchError( async (req, res) => {
+    const { id } = req.params
+    const imageToDelete = await Image.findByPk(id)
+    if (!imageToDelete) return res.status(404).json({message: "image not found ://"})
+    await deleteFromCloudinary(imageToDelete.url)
+    await imageToDelete.destroy()
+    return res.sendStatus(204)
+})
+
 module.exports = {
     getAll,
-    create
+    create,
+    remove
 }
