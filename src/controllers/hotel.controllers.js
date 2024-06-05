@@ -13,18 +13,19 @@ const getAll = catchError(async(req, res) => {
     const results = await Hotel.findAll({
         include: [Image, City],
         where: whereQuerys,
-        raw: true, // findAll devuelve instancias de sequelize, lo cual contiene info adicional a la de los hoteles, pero yo solo quiero la info de los hoteles, por lo que añado el raw
-        nest: true // para que (por el raw) no salga todo plano
+        // raw: true, // findAll devuelve instancias de sequelize, lo cual contiene info adicional a la de los hoteles, pero yo solo quiero la info de los hoteles, por lo que añado el raw
+        // nest: true // para que (por el raw) no salga todo plano
     });
 
     const hotelsWithAvgPromises = results.map(async hotel => {
+        const hotelJSON = hotel.toJSON()
         const reviews = await Review.findAll({ where: { hotelId: hotel.id }, raw: true })
         let sumRatings = 0
         reviews.forEach(review => {
             sumRatings += Number(review.rating)
         })
         return {
-            ...hotel,
+            ...hotelJSON,
             average: +(sumRatings / reviews.length).toFixed(1),
             // reviews
         }
